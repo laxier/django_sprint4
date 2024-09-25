@@ -56,12 +56,15 @@ class CategoryList(PaginatorMixin, PostMixin, ListView):
 
 
 class PostCreate(PostMixin, PostFormMixin, CreateView):
-    success_url = reverse_lazy('blog:index')
     template_name = 'blog/create.html'
 
     def form_valid(self, form):
         form.instance.author = self.request.user
         return super().form_valid(form)
+
+    def get_success_url(self):
+        username = self.request.user.username
+        return reverse_lazy('blog:profile', kwargs={'username': username})
 
 
 class PostUpdate(PostMixin, PostFormMixin, UpdateView):
@@ -71,6 +74,12 @@ class PostUpdate(PostMixin, PostFormMixin, UpdateView):
 
 class PostDelete(PostMixin, DeleteView):
     pk_url_kwarg = 'post_id'
+    template_name = 'blog/create.html'
+    # form = DeleteForm
+
+    def get_success_url(self):
+        username = self.request.user.username
+        return reverse_lazy('blog:profile', kwargs={'username': username})
 
 
 class UserByUsernameMixin:
