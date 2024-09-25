@@ -57,6 +57,7 @@ class CategoryList(PaginatorMixin, PostMixin, ListView):
 
 class PostCreate(PostMixin, PostFormMixin, CreateView):
     success_url = reverse_lazy('blog:index')
+    template_name = 'blog/create.html'
 
     def form_valid(self, form):
         form.instance.author = self.request.user
