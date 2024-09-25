@@ -5,6 +5,9 @@ from django.http import Http404, HttpResponseRedirect
 from django.utils import timezone
 from .models import Post, Category, User, Comment
 from .forms import PostCreateForm, CommentCreateForm
+
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
 from django.views.generic import (ListView, DetailView, CreateView, UpdateView,
                                   DeleteView)
 
@@ -62,13 +65,8 @@ class CategoryList(PaginatorMixin, PostMixin, ListView):
         return context
 
 
-class PostCreate(PostMixin, PostFormMixin, CreateView):
+class PostCreate(LoginRequiredMixin, PostMixin, PostFormMixin, CreateView):
     template_name = 'blog/create.html'
-
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return reverse_lazy('login')
-        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         form.instance.author = self.request.user
@@ -80,15 +78,26 @@ class PostCreate(PostMixin, PostFormMixin, CreateView):
         return reverse_lazy('blog:profile', kwargs={'username': username})
 
 
-class PostUpdate(PostMixin, PostFormMixin, UpdateView):
+class PostUpdate(LoginRequiredMixin, PostMixin, PostFormMixin, UpdateView):
     success_url = reverse_lazy('blog:index')
     pk_url_kwarg = 'post_id'
 
+    def dispatch(self, request, *args, **kwargs):
+        post = self.get_object()
+        if post.author != request.user:
+            raise PermissionDenied("You do not have permission to edit this post.")
+        return super().dispatch(request, *args, **kwargs)
 
-class PostDelete(PostMixin, DeleteView):
+
+class PostDelete(LoginRequiredMixin, PostMixin, DeleteView):
     pk_url_kwarg = 'post_id'
     template_name = 'blog/create.html'
-    # form = DeleteForm
+
+    def dispatch(self, request, *args, **kwargs):
+        post = self.get_object()
+        if post.author != request.user:
+            raise PermissionDenied("You do not have permission to delete this post.")
+        return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
         username = self.request.user.username
@@ -119,13 +128,18 @@ class ProfilePage(UserByUsernameMixin, PaginatorMixin, DetailView):
         return context
 
 
-class ProfileUpdate(UpdateView):
+class ProfileUpdate(LoginRequiredMixin, UpdateView):
     template_name = 'blog/user.html'
     model = User
     fields = ['username', 'first_name', 'last_name', 'email']
 
     def get_object(self, queryset=None):
         return self.request.user
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            raise PermissionDenied("You do not have permission to edit this profile.")
+        return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
         username = self.request.user.username
@@ -154,7 +168,7 @@ class BackToPostMixin:
         return reverse_lazy('blog:post_detail', kwargs={'post_id': post_id})
 
 
-class CommentCreate(CommentFormMixin, CreateView):
+class CommentCreate(LoginRequiredMixin, CommentFormMixin, CreateView):
     context_object_name = 'comment'
 
     def form_valid(self, form):
@@ -171,10 +185,24 @@ class CommentCreate(CommentFormMixin, CreateView):
                                                  kwargs={'post_id': post.id}))
 
 
-class CommentUpdate(CommentIdMixin, CommentMixin, CommentFormMixin,
+class CommentUpdate(LoginRequiredMixin, CommentIdMixin, CommentMixin, CommentFormMixin,
                     BackToPostMixin, UpdateView):
     template_name = 'blog/comment.html'
 
+    def dispatch(self, request, *args, **kwargs):
+        comment = self.get_object()
+        if comment.author != request.user:
+            raise PermissionDenied("You do not have permission to edit this comment.")
+        return super().dispatch(request, *args, **kwargs)
 
-class CommentDelete(CommentMixin, CommentIdMixin, BackToPostMixin, DeleteView):
+
+class CommentDelete(LoginRequiredMixin, CommentMixin, CommentIdMixin,
+                    BackToPostMixin, DeleteView):
     template_name = 'blog/comment.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        comment = self.get_object()
+        if comment.author != request.user:
+            raise PermissionDenied("You do not have permission to delete this comment.")
+        return super().dispatch(request, *args, **kwargs)
+
