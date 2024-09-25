@@ -5,17 +5,22 @@ from django.http import Http404, HttpResponseRedirect
 from django.utils import timezone
 from .models import Post, Category, User, Comment
 from .forms import PostCreateForm, CommentCreateForm
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.views.generic import (ListView, DetailView, CreateView, UpdateView,
+                                  DeleteView)
 
 
+# Классы для работы с Постами
+# Миксин пагинатора, по сколько выводить элементов на страницу
 class PaginatorMixin:
     paginate_by = 10
 
 
+# Миксин модели Пост
 class PostMixin:
     model = Post
 
 
+# Миксин формы модели Пост
 class PostFormMixin:
     form_class = PostCreateForm
 
@@ -33,7 +38,8 @@ class PostDetail(CreateView):
         context = super().get_context_data(**kwargs)
         post_id = self.kwargs.get('post_id')
         post = get_object_or_404(Post, id=post_id)
-        if (post.pub_date > timezone.now() or not post.is_published or not post.category.is_published):
+        if (post.pub_date > timezone.now() or not post.is_published
+                or not post.category.is_published):
             raise Http404("Публикация не найдена.")
         context['post'] = post
         context['comments'] = post.comments.all()
@@ -44,7 +50,8 @@ class CategoryList(PaginatorMixin, PostMixin, ListView):
     template_name = 'blog/index.html'
 
     def get_queryset(self):
-        self.category = get_object_or_404(Category, slug=self.kwargs['category_slug'])
+        self.category = get_object_or_404(Category,
+                                          slug=self.kwargs['category_slug'])
         if not self.category.is_published:
             raise Http404("Category is not published.")
         return Post.get_published_posts(n=None).filter(category=self.category)
@@ -82,6 +89,7 @@ class PostDelete(PostMixin, DeleteView):
         return reverse_lazy('blog:profile', kwargs={'username': username})
 
 
+# здесь начинаются классы пользователя
 class UserByUsernameMixin:
     def get_object(self, queryset=None):
         username = self.kwargs.get('username')
@@ -118,14 +126,18 @@ class ProfileUpdate(UpdateView):
         return reverse_lazy('blog:profile', kwargs={'username': username})
 
 
+# здесь начинаются классы для работы с комментариями
+# миксин для модели Comment
 class CommentMixin:
     model = Comment
 
 
+# миксин формы модели Comment
 class CommentFormMixin:
     form_class = CommentCreateForm
 
 
+# миксин передающий параметр pk в запросе
 class CommentIdMixin:
     pk_url_kwarg = 'comment_id'
 
@@ -149,10 +161,12 @@ class CommentCreate(CommentFormMixin, CreateView):
         comment.post = post
 
         comment.save()
-        return HttpResponseRedirect(reverse_lazy('blog:post_detail', kwargs={'post_id': post.id}))
+        return HttpResponseRedirect(reverse_lazy('blog:post_detail',
+                                                 kwargs={'post_id': post.id}))
 
 
-class CommentUpdate(CommentIdMixin, CommentMixin, CommentFormMixin, BackToPostMixin, UpdateView):
+class CommentUpdate(CommentIdMixin, CommentMixin, CommentFormMixin,
+                    BackToPostMixin, UpdateView):
     template_name = 'blog/comment.html'
 
 

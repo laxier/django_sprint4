@@ -7,8 +7,10 @@ class PostCreateForm(forms.ModelForm):
         model = Post
         exclude = ['author']
         widgets = {
-            'pub_date': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'})
+            'pub_date': forms.DateTimeInput(attrs={'class': 'form-control',
+                                                   'type': 'datetime-local'})
         }
+
 
 class CommentCreateForm(forms.ModelForm):
     class Meta:
