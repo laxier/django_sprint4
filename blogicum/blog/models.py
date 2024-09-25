@@ -49,7 +49,7 @@ class Post(BaseModel):
         verbose_name='Категория',
         related_name='posts'
     )
-    image = models.ImageField('Фото', upload_to='birthdays_images', blank=True)
+    image = models.ImageField('Фото', upload_to='blog_images', blank=True)
 
     def __str__(self):
         return self.title
@@ -67,6 +67,10 @@ class Post(BaseModel):
             category__is_published=True
         )
         return queryset if n is None else queryset[:n]
+
+    @property
+    def comment_count(self):
+        return self.comments.count()
 
 
 class Location(BaseModel):

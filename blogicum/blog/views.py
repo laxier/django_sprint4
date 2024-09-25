@@ -69,9 +69,10 @@ class PostCreate(PostMixin, PostFormMixin, CreateView):
         if not request.user.is_authenticated:
             return reverse_lazy('login')
         return super().dispatch(request, *args, **kwargs)
+
     def form_valid(self, form):
         form.instance.author = self.request.user
-        post = form.save()
+        form.save()
         return super().form_valid(form)
 
     def get_success_url(self):
