@@ -20,6 +20,8 @@ from django.conf.urls.static import static
 
 from django.contrib.auth.forms import UserCreationForm
 from django.views.generic.edit import CreateView
+# from pages.views import page_not_found, custom_500_view
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -35,3 +37,7 @@ urlpatterns = [
          name='registration',
          ),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+handler500 = "pages.views.custom_500_view"
+handler404 = "pages.views.page_not_found"
+
