@@ -41,8 +41,8 @@ class PostDetail(CreateView):
         context = super().get_context_data(**kwargs)
         post_id = self.kwargs.get('post_id')
         post = get_object_or_404(Post, id=post_id)
-        if (post.pub_date > timezone.now() or not post.is_published
-                or not post.category.is_published):
+        if ((post.pub_date > timezone.now() or not post.is_published
+             or not post.category.is_published) and post.author != self.request.user):
             raise Http404("Публикация не найдена.")
         context['post'] = post
         context['comments'] = post.comments.all()
@@ -67,6 +67,7 @@ class CategoryList(PaginatorMixin, PostMixin, ListView):
 
 class PostCreate(LoginRequiredMixin, PostMixin, PostFormMixin, CreateView):
     template_name = 'blog/create.html'
+    template_name_list = ['blog/create.html']
 
     def form_valid(self, form):
         form.instance.author = self.request.user
@@ -82,10 +83,11 @@ class PostUpdate(LoginRequiredMixin, PostMixin, PostFormMixin, UpdateView):
     success_url = reverse_lazy('blog:index')
     pk_url_kwarg = 'post_id'
 
+
     def dispatch(self, request, *args, **kwargs):
         post = self.get_object()
         if post.author != request.user:
-            raise PermissionDenied("You do not have permission to edit this post.")
+            return HttpResponseRedirect(reverse_lazy('blog:post_detail', kwargs={'post_id': post.id}))
         return super().dispatch(request, *args, **kwargs)
 
 
@@ -114,12 +116,16 @@ class UserByUsernameMixin:
 
 class ProfilePage(UserByUsernameMixin, PaginatorMixin, DetailView):
     template_name = 'blog/profile.html'
-    model = User
+
+    # model = User
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['profile'] = self.user
+        user = get_object_or_404(User, username=self.kwargs['username'])
+        context['profile'] = user
         user_posts = self.object.posts.all()
+
+        context['user'] = self.request.user
 
         paginator = Paginator(user_posts, self.paginate_by)
         page_number = self.request.GET.get('page')
@@ -205,4 +211,3 @@ class CommentDelete(LoginRequiredMixin, CommentMixin, CommentIdMixin,
         if comment.author != request.user:
             raise PermissionDenied("You do not have permission to delete this comment.")
         return super().dispatch(request, *args, **kwargs)
-
