@@ -42,7 +42,8 @@ class PostDetail(CreateView):
         post_id = self.kwargs.get('post_id')
         post = get_object_or_404(Post, id=post_id)
         if ((post.pub_date > timezone.now() or not post.is_published
-             or not post.category.is_published) and post.author != self.request.user):
+                or not post.category.is_published)
+                and post.author != self.request.user):
             raise Http404("Публикация не найдена.")
         context['post'] = post
         context['comments'] = post.comments.all()
@@ -83,11 +84,12 @@ class PostUpdate(LoginRequiredMixin, PostMixin, PostFormMixin, UpdateView):
     success_url = reverse_lazy('blog:index')
     pk_url_kwarg = 'post_id'
 
-
     def dispatch(self, request, *args, **kwargs):
         post = self.get_object()
         if post.author != request.user:
-            return HttpResponseRedirect(reverse_lazy('blog:post_detail', kwargs={'post_id': post.id}))
+            return HttpResponseRedirect(reverse_lazy('blog:post_detail',
+                                                     kwargs={'post_id':
+                                                             post.id}))
         return super().dispatch(request, *args, **kwargs)
 
 
@@ -98,7 +100,8 @@ class PostDelete(LoginRequiredMixin, PostMixin, DeleteView):
     def dispatch(self, request, *args, **kwargs):
         post = self.get_object()
         if post.author != request.user:
-            raise PermissionDenied("You do not have permission to delete this post.")
+            raise PermissionDenied(
+                "You do not have permission to delete this post.")
         return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
@@ -144,7 +147,8 @@ class ProfileUpdate(LoginRequiredMixin, UpdateView):
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
-            raise PermissionDenied("You do not have permission to edit this profile.")
+            raise PermissionDenied(
+                "You do not have permission to edit this profile.")
         return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
@@ -191,14 +195,15 @@ class CommentCreate(LoginRequiredMixin, CommentFormMixin, CreateView):
                                                  kwargs={'post_id': post.id}))
 
 
-class CommentUpdate(LoginRequiredMixin, CommentIdMixin, CommentMixin, CommentFormMixin,
-                    BackToPostMixin, UpdateView):
+class CommentUpdate(LoginRequiredMixin, CommentIdMixin, CommentMixin,
+                    CommentFormMixin, BackToPostMixin, UpdateView):
     template_name = 'blog/comment.html'
 
     def dispatch(self, request, *args, **kwargs):
         comment = self.get_object()
         if comment.author != request.user:
-            raise PermissionDenied("You do not have permission to edit this comment.")
+            raise PermissionDenied(
+                "You do not have permission to edit this comment.")
         return super().dispatch(request, *args, **kwargs)
 
 
@@ -209,5 +214,6 @@ class CommentDelete(LoginRequiredMixin, CommentMixin, CommentIdMixin,
     def dispatch(self, request, *args, **kwargs):
         comment = self.get_object()
         if comment.author != request.user:
-            raise PermissionDenied("You do not have permission to delete this comment.")
+            raise PermissionDenied(
+                "You do not have permission to delete this comment.")
         return super().dispatch(request, *args, **kwargs)

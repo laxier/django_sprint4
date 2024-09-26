@@ -27,5 +27,6 @@ urlpatterns = [
     # Profile urls
     path("profile/<str:username>/", views.ProfilePage.as_view(),
          name="profile"),
-    path("profile/user/edit/", views.ProfileUpdate.as_view(), name="edit_profile"),
+    path("profile/user/edit/", views.ProfileUpdate.as_view(),
+         name="edit_profile"),
 ]
