@@ -23,9 +23,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-r%5rnu&or0!+u&+pt^rtir)z_wy&=&n-2khep5##)*0%^#cc!-'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 
 # Application definition
@@ -136,4 +136,6 @@ EMAIL_FILE_PATH = BASE_DIR / 'sent_emails'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_REDIRECT_URL = 'blog:index'
-LOGIN_URL = 'users:login'
+LOGIN_URL = 'login'
+
+CSRF_FAILURE_VIEW = 'pages.views.csrf_failure'
