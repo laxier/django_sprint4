@@ -4,13 +4,13 @@ from django.utils import timezone
 
 User = get_user_model()
 
-help_text = 'Снимите галочку, чтобы скрыть публикацию.'
 
-
+# BaseModel contains common fields for other models to inherit
 class BaseModel(models.Model):
     is_published = models.BooleanField(default=True,
                                        verbose_name='Опубликовано',
-                                       help_text=help_text)
+                                       help_text=('Снимите галочку, ',
+                                                  'чтобы скрыть публикацию.'))
     created_at = models.DateTimeField(auto_now_add=True,
                                       verbose_name='Добавлено')
 
@@ -18,6 +18,7 @@ class BaseModel(models.Model):
         abstract = True
 
 
+# Post model represents a blog post
 class Post(BaseModel):
     title = models.CharField(max_length=256, verbose_name='Название')
     text = models.TextField(verbose_name='Текст')
@@ -59,6 +60,7 @@ class Post(BaseModel):
         verbose_name_plural = 'Публикации'
         ordering = ('-pub_date',)
 
+    # Method to get published posts, limit the number of posts returned
     @classmethod
     def get_published_posts(cls, n=None):
         queryset = cls.objects.filter(
@@ -68,11 +70,13 @@ class Post(BaseModel):
         )
         return queryset if n is None else queryset[:n]
 
+    # Property to return the count of comments for the post
     @property
     def comment_count(self):
         return self.comments.count()
 
 
+# Location model represents a place associated with posts
 class Location(BaseModel):
     name = models.CharField(max_length=256,
                             verbose_name='Название места')
@@ -85,6 +89,7 @@ class Location(BaseModel):
         verbose_name_plural = 'Местоположения'
 
 
+# Category model represents a category for posts
 class Category(BaseModel):
     title = models.CharField(max_length=256, verbose_name='Заголовок')
     description = models.TextField(verbose_name='Описание')
@@ -102,9 +107,12 @@ class Category(BaseModel):
         verbose_name_plural = 'Категории'
 
 
+# Comment model represents comments on posts
 class Comment(models.Model):
+    # Post associated with the comment
     post = models.ForeignKey(Post, on_delete=models.CASCADE,
                              related_name='comments')
+    # the author
     author = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
     text = models.TextField(verbose_name='текст комментария')
     created_at = models.DateTimeField(auto_now_add=True)
