@@ -67,13 +67,8 @@ class Post(BaseModel):
             pub_date__lte=timezone.now(),
             is_published=True,
             category__is_published=True
-        )
+        ).annotate(comment_count=models.Count('comments'))
         return queryset if n is None else queryset[:n]
-
-    # Property to return the count of comments for the post
-    @property
-    def comment_count(self):
-        return self.comments.count()
 
 
 # Location model represents a place associated with posts
