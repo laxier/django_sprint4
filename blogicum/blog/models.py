@@ -62,12 +62,17 @@ class Post(BaseModel):
 
     # Method to get published posts, limit the number of posts returned
     @classmethod
-    def get_published_posts(cls, n=None):
-        queryset = cls.objects.filter(
+    def get_published_posts(cls, queryset=None, n=None):
+        # Default to all posts if no queryset is provided
+        if queryset is None:
+            queryset = cls.objects.all()
+
+        queryset = queryset.filter(
             pub_date__lte=timezone.now(),
             is_published=True,
             category__is_published=True
         ).annotate(comment_count=models.Count('comments')).order_by(*cls._meta.ordering)
+
         return queryset if n is None else queryset[:n]
 
 
