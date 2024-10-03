@@ -67,7 +67,7 @@ class Post(BaseModel):
             pub_date__lte=timezone.now(),
             is_published=True,
             category__is_published=True
-        ).annotate(comment_count=models.Count('comments')).order_by('-pub_date')
+        ).annotate(comment_count=models.Count('comments')).order_by(*cls._meta.ordering)
         return queryset if n is None else queryset[:n]
 
 
