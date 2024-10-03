@@ -158,7 +158,11 @@ class ProfilePage(UserByUsernameMixin, PaginatorMixin, DetailView):
         context = super().get_context_data(**kwargs)
         user = get_object_or_404(User, username=self.kwargs['username'])
         context['profile'] = user
+
         user_posts = self.object.posts.all()
+
+        if self.request.user != user:  # If the request user is not the profile owner
+            user_posts = user_posts.filter(is_published=True)  # Show only published posts
 
         context['user'] = self.request.user
 
