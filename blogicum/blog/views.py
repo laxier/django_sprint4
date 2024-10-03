@@ -11,6 +11,7 @@ from django.views.generic import (
 
 from .models import Post, Category, User, Comment
 from .forms import PostCreateForm, CommentCreateForm
+from django.db.models import Count
 
 
 class PaginatorMixin:
@@ -167,6 +168,7 @@ class ProfilePage(UserByUsernameMixin, PaginatorMixin, LoginRequiredMixin, Detai
     def get_user_posts(self, user):
         """Retrieve and filter user posts based on publication status."""
         user_posts = user.posts.all()
+        user_posts = user_posts.prefetch_related('comments').annotate(comment_count=Count('comments')).order_by(*Post._meta.ordering)
         if self.request.user != user:  # If the request user is not the profile owner
             user_posts = user_posts.filter(is_published=True)  # Show only published posts
         return user_posts
