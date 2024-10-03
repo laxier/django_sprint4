@@ -149,7 +149,7 @@ class UserByUsernameMixin:
         return self.user
 
 
-class ProfilePage(UserByUsernameMixin, PaginatorMixin, DetailView):
+class ProfilePage(UserByUsernameMixin, PaginatorMixin, LoginRequiredMixin, DetailView):
     """View for displaying user profile page."""
 
     template_name = 'blog/profile.html'
@@ -158,20 +158,24 @@ class ProfilePage(UserByUsernameMixin, PaginatorMixin, DetailView):
         context = super().get_context_data(**kwargs)
         user = get_object_or_404(User, username=self.kwargs['username'])
         context['profile'] = user
+        user_posts = self.get_user_posts(user)
+        page_obj = self.paginate_user_posts(user_posts)
+        context['page_obj'] = page_obj
+        context['user'] = self.request.user
+        return context
 
-        user_posts = self.object.posts.all()
-
+    def get_user_posts(self, user):
+        """Retrieve and filter user posts based on publication status."""
+        user_posts = user.posts.all()
         if self.request.user != user:  # If the request user is not the profile owner
             user_posts = user_posts.filter(is_published=True)  # Show only published posts
+        return user_posts
 
-        context['user'] = self.request.user
-
-        # Paginate user's posts
+    def paginate_user_posts(self, user_posts):
+        """Paginate the user's posts."""
         paginator = Paginator(user_posts, self.paginate_by)
         page_number = self.request.GET.get('page')
-        page_obj = paginator.get_page(page_number)
-        context['page_obj'] = page_obj
-        return context
+        return paginator.get_page(page_number)
 
 
 class ProfileUpdate(LoginRequiredMixin, UpdateView):
