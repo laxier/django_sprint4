@@ -62,19 +62,33 @@ class Post(BaseModel):
 
     # Method to get published posts, limit the number of posts returned
     @classmethod
-    def get_published_posts(cls, queryset=None, n=None):
-        # Default to all posts if no queryset is provided
+    def get_published_posts(cls, user=None, queryset=None, n=None):
+        """
+        Returns published posts or all posts for the author.
+        - If a user is provided and they are the author, unpublished posts will be included.
+        - If no user is provided or the user is not the author, only published posts are returned.
+        """
         if queryset is None:
             queryset = cls.objects.all()
 
-        queryset = queryset.filter(
-            pub_date__lte=timezone.now(),
-            is_published=True,
-            category__is_published=True
-        ).annotate(comment_count=models.Count('comments')).order_by(*cls._meta.ordering)
+        # If the user is provided, include the user's own posts (including unpublished)
+        if user is not None:
+            queryset = queryset.filter(
+                models.Q(author=user) | (
+                        models.Q(pub_date__lte=timezone.now()) &
+                        models.Q(is_published=True) &
+                        models.Q(category__is_published=True)
+                )
+            )
+        else:
 
+            queryset = queryset.filter(
+                pub_date__lte=timezone.now(),
+                is_published=True,
+                category__is_published=True
+            )
+        queryset = queryset.annotate(comment_count=models.Count('comments')).order_by(*cls._meta.ordering)
         return queryset if n is None else queryset[:n]
-
 
 # Location model represents a place associated with posts
 class Location(BaseModel):

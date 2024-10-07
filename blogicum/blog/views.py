@@ -36,8 +36,8 @@ class PostList(PaginatorMixin, PostMixin, ListView):
     """View for listing published posts."""
 
     template_name = 'blog/index.html'
-    queryset = Post.get_published_posts()
-
+    def get_queryset(self):
+        return Post.get_published_posts(user=self.request.user)
 
 class PostDetail(CreateView):
     """View for displaying post details and adding comments."""
@@ -47,21 +47,24 @@ class PostDetail(CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        post = self.get_post()
+        context['post'] = post
+        context['comments'] = post.comments.all()
+        return context
+
+    def get_post(self):
         post_id = self.kwargs.get('post_id')
         post = get_object_or_404(Post, id=post_id)
-
         # Check if the post should be visible to the current user
         if (
             (post.pub_date > timezone.now() or not post.is_published
              or not post.category.is_published)
             and post.author != self.request.user
         ):
-            # Raise 404 if post is not published and user is not the author
             raise Http404("Публикация не найдена.")
 
-        context['post'] = post
-        context['comments'] = post.comments.all()
-        return context
+        return post
+
 
 
 class CategoryList(PaginatorMixin, PostMixin, ListView):
@@ -76,7 +79,7 @@ class CategoryList(PaginatorMixin, PostMixin, ListView):
         if not self.category.is_published:
             # Don't show posts from unpublished categories
             raise Http404("Category is not published.")
-        return Post.get_published_posts(n=None).filter(category=self.category)
+        return Post.get_published_posts(n=None, user=self.request.user, queryset=self.category.posts)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -159,7 +162,7 @@ class ProfilePage(UserByUsernameMixin, PaginatorMixin, LoginRequiredMixin, Detai
         context = super().get_context_data(**kwargs)
         user = get_object_or_404(User, username=self.kwargs['username'])
         context['profile'] = user
-        user_posts = self.get_user_posts(user)
+        user_posts = Post.get_published_posts(user=self.request.user, queryset=user.posts)
         page_obj = self.paginate_user_posts(user_posts)
         context['page_obj'] = page_obj
         context['user'] = self.request.user
